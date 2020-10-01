@@ -20,6 +20,18 @@ body {
   border-style: solid;
   border-width: thin;
 }
+.data_analysis {
+  border-style: solid;
+  border-width: thin;
+}
+.misc {
+  border-style: solid;
+  border-width: thin;
+}
+.thgts{
+  border-style: solid;
+  border-width: thin;
+}
 div.item {
   vertical-align: middle;
   float: right;
