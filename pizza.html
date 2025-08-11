@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Domino's Pizza Maker Simulation</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128/examples/js/controls/OrbitControls.js"></script>
+    <style>
+        body { margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f4f9; }
+        #container { display: flex; height: 100vh; }
+        #toppings-panel { width: 50%; padding: 20px; background: #ffffff; border-right: 2px solid #e0e0e0; overflow-y: auto; box-shadow: 2px 0 10px rgba(0,0,0,0.1); }
+        #pizza-view { width: 50%; background: #f0f4f8; display: flex; align-items: center; justify-content: center; }
+        h2 { color: #003087; font-size: 1.5em; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; }
+        h3 { color: #0056b3; font-size: 1.2em; margin-top: 20px; }
+        label { display: block; margin: 10px 0; font-size: 1em; color: #333; }
+        select { margin-left: 10px; padding: 5px; border-radius: 4px; border: 1px solid #ccc; background: #fff; }
+        input[type="checkbox"] { margin-right: 10px; vertical-align: middle; }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div id="toppings-panel">
+            <h2>Toppings</h2>
+            <h3>Choose Meats</h3>
+            <label><input type="checkbox" id="ham"> Ham
+                <select id="ham-placement"><option value="whole">Whole</option><option value="left">Left</option><option value="right">Right</option></select>
+                <select id="ham-amount"><option value="none">None</option><option value="light">Light</option><option value="normal" selected>Normal</option><option value="extra">Extra</option></select>
+            </label>
+            <label><input type="checkbox" id="beef"> Beef
+                <select id="beef-placement"><option value="whole">Whole</option><option value="left">Left</option><option value="right">Right</option></select>
+                <select id="beef-amount"><option value="none">None</option><option value="light">Light</option><option value="normal" selected>Normal</option><option value="extra">Extra</option></select>
+            </label>
+            <label><input type="checkbox" id="pepperoni"> Pepperoni
+                <select id="pepperoni-placement"><option value="whole">Whole</option><option value="left">Left</option><option value="right">Right</option></select>
+                <select id="pepperoni-amount"><option value="none">None</option><option value="light">Light</option><option value="normal" selected>Normal</option><option value="extra">Extra</option></select>
+            </label>
+            <label><input type="checkbox" id="italian-sausage"> Italian Sausage
+                <select id="italian-sausage-placement"><option value="whole">Whole</option><option value="left">Left</option><option value="right">Right</option></select>
+                <select id="italian-sausage-amount"><option value="none">None</option><option value="light">Light</option><option value="normal" selected>Normal</option><option value="extra">Extra</option></select>
+            </label>
+            <label><input type="checkbox" id="premium-chicken"> Premium Chicken
+                <select id="premium-chicken-placement"><option value="whole">Whole</option><option value="left">Left</option><option value="right">Right</option></select>
+                <select id="premium-chicken-amount"><option value="none">None</option><option value="light">Light</option><option value="normal" selected>Normal</option><option value="extra">Extra</option></select>
+            </label>
+            <label><input type="checkbox" id="bacon" checked> Bacon
+                <select id="bacon-placement"><option value="whole" selected>Whole</option><option value="left">Left</option><option value="right">Right</option></select>
+                <select id="bacon-amount"><option value="none">None</option><option value="light">Light</option><option value="normal" selected>Normal</option><option value="extra">Extra</option></select>
+            </label>
+            <label><input type="checkbox" id="philly-steak" checked> Philly Steak
+                <select id="philly-steak-placement"><option value="whole" selected>Whole</option><option value="left">Left</option><option value="right">Right</option></select>
+                <select id="philly-steak-amount"><option value="none">None</option><option value="light">Light</option><option value="normal" selected>Normal</option><option value="extra">Extra</option></select>
+            </label>
+
+            <h3>Choose Non-meats</h3>
+            <label><input type="checkbox" id="hot-buffalo-sauce" checked> Hot Buffalo Sauce
+                <select id="hot-buffalo-sauce-placement"><option value="whole" selected>Whole</option><option value="left">Left</option><option value="right">Right</option></select>
+                <select id="hot-buffalo-sauce-amount"><option value="none">None</option><option value="light">Light</option><option value="normal" selected>Normal</option><option value="extra">Extra</option></select>
+            </label>
+            <label><input type="checkbox" id="pineapple"> Pineapple
+                <select id="pineapple-placement"><option value="whole">Whole</option><option value="left">Left</option><option value="right">Right</option></select>
+                <select id="pineapple-amount"><option value="none">None</option><option value="light">Light</option><option value="normal" selected>Normal</option><option value="extra">Extra</option></select>
+            </label>
+            <label><input type="checkbox" id="shredded-provolone-cheese"> Shredded Provolone Cheese
+                <select id="shredded-provolone-cheese-placement"><option value="whole">Whole</option><option value="left">Left</option><option value="right">Right</option></select>
+                <select id="shredded-provolone-cheese-amount"><option value="none">None</option><option value="light">Light</option><option value="normal" selected>Normal</option><option value="extra">Extra</option></select>
+            </label>
+            <label><input type="checkbox" id="cheddar-cheese-blend"> Cheddar Cheese Blend
+                <select id="cheddar-cheese-blend-placement"><option value="whole">Whole</option><option value="left">Left</option><option value="right">Right</option></select>
+                <select id="cheddar-cheese-blend-amount"><option value="none">None</option><option value="light">Light</option><option value="normal" selected>Normal</option><option value="extra">Extra</option></select>
+            </label>
+            <label><input type="checkbox" id="green-peppers"> Green Peppers
+                <select id="green-peppers-placement"><option value="whole">Whole</option><option value="left">Left</option><option value="right">Right</option></select>
+                <select id="green-peppers-amount"><option value="none">None</option><option value="light">Light</option><option value="normal" selected>Normal</option><option value="extra">Extra</option></select>
+            </label>
+            <label><input type="checkbox" id="garlic"> Garlic
+                <select id="garlic-placement"><option value="whole">Whole</option><option value="left">Left</option><option value="right">Right</option></select>
+                <select id="garlic-amount"><option value="none">None</option><option value="light">Light</option><option value="normal" selected>Normal</option><option value="extra">Extra</option></select>
+            </label>
+            <label><input type="checkbox" id="spinach"> Spinach
+                <select id="spinach-placement"><option value="whole">Whole</option><option value="left">Left</option><option value="right">Right</option></select>
+                <select id="spinach-amount"><option value="none">None</option><option value="light">Light</option><option value="normal" selected>Normal</option><option value="extra">Extra</option></select>
+            </label>
+            <label><input type="checkbox" id="feta-cheese"> Feta Cheese
+                <select id="feta-cheese-placement"><option value="whole">Whole</option><option value="left">Left</option><option value="right">Right</option></select>
+                <select id="feta-cheese-amount"><option value="none">None</option><option value="light">Light</option><option value="normal" selected>Normal</option><option value="extra">Extra</option></select>
+            </label>
+        </div>
+        <div id="pizza-view"></div>
+    </div>
+
+    <script>
+        // Three.js setup
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / 2 / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth / 2, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.setClearColor(0x000000, 0);
+        document.getElementById('pizza-view').appendChild(renderer.domElement);
+
+        // Controls for dragging
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.25;
+        controls.screenSpacePanning = false;
+        controls.minDistance = 1;
+        controls.maxDistance = 10;
+        controls.maxPolarAngle = Math.PI / 2;
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+        scene.add(ambientLight);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2);
+        directionalLight.position.set(5, 10, 5);
+        directionalLight.castShadow = true;
+        directionalLight.shadow.mapSize.width = 2048;
+        directionalLight.shadow.mapSize.height = 2048;
+        directionalLight.shadow.camera.near = 0.5;
+        directionalLight.shadow.camera.far = 50;
+        scene.add(directionalLight);
+        const pointLight = new THREE.PointLight(0xffe4b5, 0.5, 10);
+        pointLight.position.set(0, 5, 0);
+        scene.add(pointLight);
+
+        // Pizza base (crust)
+        const crustGeometry = new THREE.CylinderGeometry(2, 2, 0.3, 64, 1, true);
+        const crustMaterial = new THREE.MeshPhysicalMaterial({ color: 0xd2a679, roughness: 0.7, metalness: 0.1, clearcoat: 0.5 });
+        const crust = new THREE.Mesh(crustGeometry, crustMaterial);
+        crust.castShadow = true;
+        crust.receiveShadow = true;
+        scene.add(crust);
+
+        // Sauce layer
+        const sauceGeometry = new THREE.CylinderGeometry(1.8, 1.8, 0.05, 64);
+        let sauceMaterial = new THREE.MeshPhysicalMaterial({ color: 0xff4500, roughness: 0.4, metalness: 0, clearcoat: 0.3 });
+        let sauce = new THREE.Mesh(sauceGeometry, sauceMaterial);
+        sauce.position.y = 0.175;
+        sauce.castShadow = true;
+        sauce.receiveShadow = true;
+        scene.add(sauce);
+
+        // Cheese layer
+        const cheeseGeometry = new THREE.CylinderGeometry(1.9, 1.9, 0.15, 64);
+        const cheeseMaterial = new THREE.MeshPhysicalMaterial({ color: 0xffd700, roughness: 0.5, metalness: 0, clearcoat: 0.4, transmission: 0.1 });
+        const cheese = new THREE.Mesh(cheeseGeometry, cheeseMaterial);
+        cheese.position.y = 0.2;
+        cheese.castShadow = true;
+        cheese.receiveShadow = true;
+        scene.add(cheese);
+
+        camera.position.set(0, 4, 5);
+        camera.lookAt(0, 0, 0);
+
+        // Toppings groups
+        const toppings = {};
+
+        // Topping definitions with enhanced visuals
+        const toppingDefs = {
+            'ham': { color: 0xffc0cb, shape: 'cube', roughness: 0.6 },
+            'beef': { color: 0x8b4513, shape: 'cube', roughness: 0.7 },
+            'pepperoni': { color: 0xff4500, shape: 'circle', roughness: 0.5 },
+            'italian-sausage': { color: 0xa52a2a, shape: 'cube', roughness: 0.6 },
+            'premium-chicken': { color: 0xffd700, shape: 'cube', roughness: 0.6 },
+            'bacon': { color: 0x8b0000, shape: 'strip', roughness: 0.5 },
+            'philly-steak': { color: 0x654321, shape: 'strip', roughness: 0.7 },
+            'hot-buffalo-sauce': { color: 0xff8c00, shape: 'drizzle', roughness: 0.4 },
+            'pineapple': { color: 0xffff00, shape: 'cube', roughness: 0.6 },
+            'shredded-provolone-cheese': { color: 0xfffacd, shape: 'shred', roughness: 0.5 },
+            'cheddar-cheese-blend': { color: 0xffd700, shape: 'shred', roughness: 0.5 },
+            'green-peppers': { color: 0x008000, shape: 'ring', roughness: 0.6 },
+            'garlic': { color: 0xfffff0, shape: 'cube', roughness: 0.6 },
+            'spinach': { color: 0x006400, shape: 'leaf', roughness: 0.5 },
+            'feta-cheese': { color: 0xffffff, shape: 'cube', roughness: 0.6 }
+        };
+
+        // Function to update topping
+        function updateTopping(name) {
+            const checkbox = document.getElementById(name);
+            const placementSelect = document.getElementById(name + '-placement');
+            const amountSelect = document.getElementById(name + '-amount');
+
+            if (toppings[name]) {
+                scene.remove(toppings[name]);
+                delete toppings[name];
+            }
+
+            if (!checkbox.checked || amountSelect.value === 'none') {
+                if (name === 'hot-buffalo-sauce') {
+                    sauce.visible = false;
+                }
+                return;
+            }
+
+            const def = toppingDefs[name];
+            let num = 0;
+            if (amountSelect.value === 'light') num = 12;
+            else if (amountSelect.value === 'normal') num = 24;
+            else if (amountSelect.value === 'extra') num = 48;
+
+            const group = new THREE.Group();
+
+            for (let i = 0; i < num; i++) {
+                let geometry;
+                let size = 0.12 + Math.random() * 0.06;
+                if (def.shape === 'circle') geometry = new THREE.CircleGeometry(size, 32);
+                else if (def.shape === 'strip') geometry = new THREE.BoxGeometry(size * 2.5, size / 3, 0.02);
+                else if (def.shape === 'cube') geometry = new THREE.BoxGeometry(size, size, size);
+                else if (def.shape === 'ring') geometry = new THREE.TorusGeometry(size / 2, size / 4, 16, 32);
+                else if (def.shape === 'shred') geometry = new THREE.BoxGeometry(size * 1.8, size / 4, 0.02);
+                else if (def.shape === 'leaf') geometry = new THREE.PlaneGeometry(size * 1.2, size);
+                else if (def.shape === 'drizzle') geometry = new THREE.BoxGeometry(size * 4, size / 6, 0.02);
+                else geometry = new THREE.SphereGeometry(size / 2, 32, 32);
+
+                const material = new THREE.MeshPhysicalMaterial({ color: def.color, roughness: def.roughness, metalness: 0, clearcoat: 0.3 });
+                const mesh = new THREE.Mesh(geometry, material);
+                mesh.castShadow = true;
+                mesh.receiveShadow = true;
+
+                const radius = Math.sqrt(Math.random()) * 1.9;
+                let theta = Math.random() * Math.PI * 2;
+
+                if (placementSelect.value === 'left') theta = Math.PI + (Math.random() * Math.PI) - Math.PI / 2;
+                else if (placementSelect.value === 'right') theta = (Math.random() * Math.PI) - Math.PI / 2;
+
+                mesh.position.x = radius * Math.cos(theta);
+                mesh.position.z = radius * Math.sin(theta);
+                mesh.position.y = 0.25 + Math.random() * 0.1;
+
+                if (def.shape === 'circle' || def.shape === 'leaf' || def.shape === 'shred' || def.shape === 'drizzle' || def.shape === 'strip') {
+                    mesh.rotation.x = Math.PI / 2;
+                }
+
+                mesh.rotation.z = Math.random() * Math.PI * 2;
+                mesh.rotation.y = Math.random() * 0.3 - 0.15;
+
+                group.add(mesh);
+            }
+
+            scene.add(group);
+            toppings[name] = group;
+
+            if (name === 'hot-buffalo-sauce') {
+                sauce.visible = true;
+            }
+        }
+
+        // Add event listeners for all toppings
+        Object.keys(toppingDefs).forEach(name => {
+            const checkbox = document.getElementById(name);
+            const placement = document.getElementById(name + '-placement');
+            const amount = document.getElementById(name + '-amount');
+
+            checkbox.addEventListener('change', () => updateTopping(name));
+            placement.addEventListener('change', () => updateTopping(name));
+            amount.addEventListener('change', () => updateTopping(name));
+
+            if (checkbox.checked) updateTopping(name);
+        });
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / 2 / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth / 2, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
