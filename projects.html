@@ -1,0 +1,553 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Projects</title>
+  <meta name="description" content="Minimal project list" />
+  <style>
+    :root{
+      --bg:#0b0d12;
+      --panel:rgba(255,255,255,.06);
+      --panel2:rgba(255,255,255,.09);
+      --text:rgba(255,255,255,.92);
+      --muted:rgba(255,255,255,.62);
+      --stroke:rgba(255,255,255,.12);
+      --shadow: 0 18px 60px rgba(0,0,0,.35);
+      --radius:22px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font: 14px/1.4 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      color:var(--text);
+      background:
+        radial-gradient(1100px 700px at 20% 15%, rgba(255,255,255,.10), transparent 60%),
+        radial-gradient(900px 600px at 85% 80%, rgba(255,255,255,.07), transparent 55%),
+        var(--bg);
+      overflow-x:hidden;
+    }
+    a{color:inherit; text-decoration:none}
+    .wrap{
+      max-width:1100px;
+      margin:0 auto;
+      padding:28px 18px 42px;
+    }
+    header{
+      display:flex;
+      gap:16px;
+      align-items:flex-end;
+      justify-content:space-between;
+      margin-bottom:18px;
+    }
+    .title{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+    }
+    h1{
+      margin:0;
+      font-size:22px;
+      letter-spacing:.2px;
+    }
+    .sub{
+      margin:0;
+      color:var(--muted);
+      max-width:60ch;
+    }
+    .controls{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+    .pill{
+      border:1px solid var(--stroke);
+      background:var(--panel);
+      border-radius:999px;
+      padding:10px 12px;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      box-shadow: 0 1px 0 rgba(255,255,255,.06) inset;
+      backdrop-filter: blur(10px);
+    }
+    input{
+      background:transparent;
+      border:0;
+      outline:none;
+      color:var(--text);
+      width:240px;
+      font-size:14px;
+    }
+    .chipbar{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+    .chip{
+      cursor:pointer;
+      user-select:none;
+      border:1px solid var(--stroke);
+      background:transparent;
+      color:var(--muted);
+      border-radius:999px;
+      padding:8px 10px;
+      font-size:12px;
+      transition: all .2s ease;
+    }
+    .chip[data-active="true"]{
+      background:var(--panel2);
+      color:var(--text);
+      border-color:rgba(255,255,255,.18);
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap:16px;
+      align-items:start;
+    }
+    @media (max-width: 900px){
+      header{align-items:flex-start; flex-direction:column}
+      .controls{justify-content:flex-start}
+      input{width: min(75vw, 320px);}
+      .grid{grid-template-columns:1fr}
+    }
+
+    .stack{
+      position:relative;
+      border:1px solid var(--stroke);
+      background:rgba(255,255,255,.03);
+      border-radius:var(--radius);
+      padding:14px;
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .stack::before{
+      content:"";
+      position:absolute;
+      inset:-60px -60px auto auto;
+      width:240px;
+      height:240px;
+      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.14), transparent 65%);
+      filter: blur(2px);
+      pointer-events:none;
+    }
+
+    .cards{
+      display:grid;
+      gap:10px;
+      margin-top:10px;
+    }
+    .card{
+      border:1px solid var(--stroke);
+      background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.04));
+      border-radius:18px;
+      padding:14px 14px 12px;
+      transition: transform .18s ease, border-color .18s ease, background .18s ease;
+      cursor:pointer;
+      position:relative;
+      overflow:hidden;
+    }
+    .card:hover{
+      transform: translateY(-2px);
+      border-color: rgba(255,255,255,.22);
+      background: linear-gradient(180deg, rgba(255,255,255,.09), rgba(255,255,255,.05));
+    }
+    .card[data-active="true"]{
+      border-color: rgba(255,255,255,.28);
+      background: linear-gradient(180deg, rgba(255,255,255,.11), rgba(255,255,255,.06));
+    }
+    .topline{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      justify-content:space-between;
+    }
+    .name{
+      font-size:14px;
+      font-weight:600;
+      letter-spacing:.2px;
+      display:flex;
+      gap:10px;
+      align-items:center;
+    }
+    .badge{
+      font-size:11px;
+      color:rgba(255,255,255,.75);
+      border:1px solid rgba(255,255,255,.16);
+      background:rgba(255,255,255,.06);
+      padding:4px 8px;
+      border-radius:999px;
+      white-space:nowrap;
+    }
+    .desc{
+      margin:8px 0 10px;
+      color:var(--muted);
+    }
+    .meta{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      align-items:center;
+      justify-content:space-between;
+    }
+    .tags{
+      display:flex;
+      gap:6px;
+      flex-wrap:wrap;
+    }
+    .tag{
+      font-size:11px;
+      color:rgba(255,255,255,.70);
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(255,255,255,.04);
+      padding:4px 8px;
+      border-radius:999px;
+    }
+    .links{
+      display:flex;
+      gap:10px;
+      color:rgba(255,255,255,.80);
+      font-size:12px;
+    }
+    .links a{
+      border-bottom:1px solid transparent;
+      transition:border-color .18s ease, opacity .18s ease;
+      opacity:.9;
+    }
+    .links a:hover{border-color:rgba(255,255,255,.45); opacity:1}
+
+    .spotlight{
+      position:sticky;
+      top:16px;
+      border:1px solid var(--stroke);
+      background:rgba(255,255,255,.03);
+      border-radius:var(--radius);
+      padding:16px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+    }
+    .spot-title{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom:12px;
+    }
+    .spot-title h2{
+      margin:0;
+      font-size:14px;
+      letter-spacing:.2px;
+      color:rgba(255,255,255,.86);
+      font-weight:600;
+    }
+    .kpi{
+      font-size:11px;
+      color:var(--muted);
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(255,255,255,.04);
+      padding:6px 10px;
+      border-radius:999px;
+    }
+    .big{
+      margin:6px 0 6px;
+      font-size:18px;
+      font-weight:700;
+      letter-spacing:.2px;
+    }
+    .bullets{
+      margin:10px 0 0;
+      padding-left:16px;
+      color:rgba(255,255,255,.78);
+    }
+    .bullets li{margin:6px 0}
+    footer{
+      margin-top:18px;
+      color:rgba(255,255,255,.45);
+      font-size:12px;
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .hint{color:rgba(255,255,255,.55)}
+    .count{color:rgba(255,255,255,.55)}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="title">
+        <h1>Projects</h1>
+        <p class="sub">A tiny, creative list: searchable cards on the left, and a live spotlight preview on the right.</p>
+      </div>
+
+      <div class="controls">
+        <div class="pill" title="Search projects">
+          <span aria-hidden="true">⌕</span>
+          <input id="q" type="text" placeholder="Search by name, tag, year…" autocomplete="off" />
+        </div>
+
+        <div class="chipbar" aria-label="Filters">
+          <button class="chip" data-filter="all" data-active="true">All</button>
+          <button class="chip" data-filter="ml">ML</button>
+          <button class="chip" data-filter="web">Web</button>
+          <button class="chip" data-filter="systems">Systems</button>
+          <button class="chip" data-filter="research">Research</button>
+        </div>
+      </div>
+    </header>
+
+    <section class="grid">
+      <div class="stack" aria-label="Project stack">
+        <div class="hint">Tip: click a card to pin it in the spotlight.</div>
+        <div class="cards" id="cards"></div>
+      </div>
+
+      <aside class="spotlight" aria-label="Spotlight">
+        <div class="spot-title">
+          <h2>Spotlight</h2>
+          <div class="kpi" id="kpi">0 projects</div>
+        </div>
+        <div class="big" id="spotName">Pick a project</div>
+        <div class="desc" id="spotDesc">Search or filter on the left, then click a project to see details here.</div>
+
+        <ul class="bullets" id="spotBullets" style="display:none;"></ul>
+
+        <div class="meta" style="margin-top:14px;">
+          <div class="tags" id="spotTags"></div>
+          <div class="links" id="spotLinks"></div>
+        </div>
+      </aside>
+    </section>
+
+    <footer>
+      <div class="count" id="count"></div>
+      <div>Made with plain HTML/CSS/JS · <span class="hint">Edit the <code>PROJECTS</code> array</span></div>
+    </footer>
+  </div>
+
+  <script>
+    // 1) EDIT THESE
+    const PROJECTS = [
+      {
+        name: "Genomic LLM (NanoGPT-style)",
+        year: "2025",
+        category: "research",
+        badge: "Research",
+        description: "Trained a compact transformer on bacterial genomes; evaluated in-context behavior and compression tradeoffs.",
+        tags: ["Transformers", "Genomics", "PyTorch"],
+        bullets: [
+          "Hybrid tokenization + compression experiments",
+          "Evaluation: overall/compositional/structural consistency",
+          "Cross-species transfer probes"
+        ],
+        links: { Demo: "#", GitHub: "#" }
+      },
+      {
+        name: "Predictive Maintenance API",
+        year: "2024",
+        category: "systems",
+        badge: "Systems",
+        description: "End-to-end pipeline for forecasting failures and surfacing actionable maintenance windows.",
+        tags: ["MLflow", "APIs", "MLOps"],
+        bullets: [
+          "Model monitoring + drift checks",
+          "Batch + real-time inference paths",
+          "Operator-friendly dashboards"
+        ],
+        links: { CaseStudy: "#", GitHub: "#" }
+      },
+      {
+        name: "Strategic Briefing Dashboard",
+        year: "2025",
+        category: "web",
+        badge: "Web",
+        description: "Minimal web UI that summarizes and organizes public strategic signals into digestible pages.",
+        tags: ["UI", "Search", "Summaries"],
+        bullets: [
+          "Search-first information architecture",
+          "Readable cards + drill-down views",
+          "Designed for fast scanning"
+        ],
+        links: { Live: "#", Repo: "#" }
+      },
+      {
+        name: "Promoter Sequence Classifier",
+        year: "2025",
+        category: "ml",
+        badge: "ML",
+        description: "Fine-tuned a transformer classifier on promoter sequences and analyzed generalization patterns.",
+        tags: ["Classification", "Transformers", "Bio"],
+        bullets: [
+          "Clean training pipeline + baselines",
+          "Robust evaluation splits",
+          "Error analysis by motifs"
+        ],
+        links: { Paper: "#", GitHub: "#" }
+      }
+    ];
+
+    // 2) RENDER + INTERACTIONS
+    const cardsEl = document.getElementById("cards");
+    const qEl = document.getElementById("q");
+    const chips = Array.from(document.querySelectorAll(".chip"));
+    const kpiEl = document.getElementById("kpi");
+    const countEl = document.getElementById("count");
+
+    const spotName = document.getElementById("spotName");
+    const spotDesc = document.getElementById("spotDesc");
+    const spotBullets = document.getElementById("spotBullets");
+    const spotTags = document.getElementById("spotTags");
+    const spotLinks = document.getElementById("spotLinks");
+
+    let activeFilter = "all";
+    let activeIndex = -1;
+
+    const norm = (s) => (s || "").toLowerCase().trim();
+
+    function matches(p, query) {
+      if (!query) return true;
+      const blob = [
+        p.name, p.year, p.category, p.badge, p.description,
+        ...(p.tags || [])
+      ].join(" ");
+      return norm(blob).includes(norm(query));
+    }
+
+    function filterProjects() {
+      const query = qEl.value;
+      const out = PROJECTS
+        .map((p, idx) => ({ p, idx }))
+        .filter(({ p }) => (activeFilter === "all" ? true : p.category === activeFilter))
+        .filter(({ p }) => matches(p, query));
+      return out;
+    }
+
+    function setChip(filter) {
+      activeFilter = filter;
+      chips.forEach(c => c.dataset.active = String(c.dataset.filter === filter));
+      activeIndex = -1;
+      render();
+      // auto spotlight first result if exists
+      const list = filterProjects();
+      if (list.length) setSpotlight(list[0].idx);
+      else clearSpotlight();
+    }
+
+    function setSpotlight(idx) {
+      activeIndex = idx;
+      const p = PROJECTS[idx];
+
+      // update card states
+      Array.from(document.querySelectorAll(".card")).forEach(el => {
+        el.dataset.active = String(Number(el.dataset.index) === idx);
+      });
+
+      spotName.textContent = p.name;
+      spotDesc.textContent = p.description;
+
+      // bullets
+      if (p.bullets && p.bullets.length) {
+        spotBullets.style.display = "block";
+        spotBullets.innerHTML = p.bullets.map(b => `<li>${escapeHtml(b)}</li>`).join("");
+      } else {
+        spotBullets.style.display = "none";
+        spotBullets.innerHTML = "";
+      }
+
+      // tags
+      spotTags.innerHTML = (p.tags || []).map(t => `<span class="tag">${escapeHtml(t)}</span>`).join("");
+
+      // links
+      const entries = Object.entries(p.links || {});
+      spotLinks.innerHTML = entries.map(([k, v]) =>
+        `<a href="${escapeAttr(v)}" target="_blank" rel="noreferrer">${escapeHtml(k)} ↗</a>`
+      ).join("");
+    }
+
+    function clearSpotlight() {
+      spotName.textContent = "No matches";
+      spotDesc.textContent = "Try a different search or filter.";
+      spotBullets.style.display = "none";
+      spotBullets.innerHTML = "";
+      spotTags.innerHTML = "";
+      spotLinks.innerHTML = "";
+    }
+
+    function render() {
+      const list = filterProjects();
+      const total = PROJECTS.length;
+      const shown = list.length;
+
+      kpiEl.textContent = `${shown} shown`;
+      countEl.textContent = `${shown} / ${total} projects`;
+
+      cardsEl.innerHTML = list.map(({ p, idx }, rank) => {
+        // subtle "stack" feel: slightly offset the top few cards
+        const offset = Math.min(rank, 6) * 2;
+        return `
+          <article class="card" data-index="${idx}" data-active="${idx === activeIndex}"
+            style="transform: translateY(${offset}px);"
+            role="button" tabindex="0" aria-label="Open ${escapeAttr(p.name)}">
+            <div class="topline">
+              <div class="name">
+                <span>${escapeHtml(p.name)}</span>
+                <span class="badge">${escapeHtml(p.year)} · ${escapeHtml(p.badge || p.category)}</span>
+              </div>
+            </div>
+            <p class="desc">${escapeHtml(p.description)}</p>
+            <div class="meta">
+              <div class="tags">
+                ${(p.tags || []).slice(0, 4).map(t => `<span class="tag">${escapeHtml(t)}</span>`).join("")}
+              </div>
+              <div class="links">
+                ${Object.keys(p.links || {}).slice(0, 1).map(k => `<span>${escapeHtml(k)} →</span>`).join("")}
+              </div>
+            </div>
+          </article>
+        `;
+      }).join("");
+
+      // bind click/keyboard
+      Array.from(document.querySelectorAll(".card")).forEach(el => {
+        el.addEventListener("click", () => setSpotlight(Number(el.dataset.index)));
+        el.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            setSpotlight(Number(el.dataset.index));
+          }
+        });
+      });
+    }
+
+    function escapeHtml(str){
+      return String(str).replace(/[&<>"']/g, s => ({
+        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+      }[s]));
+    }
+    function escapeAttr(str){
+      return escapeHtml(str).replace(/`/g,"&#96;");
+    }
+
+    // wire up
+    qEl.addEventListener("input", () => {
+      activeIndex = -1;
+      render();
+      const list = filterProjects();
+      if (list.length) setSpotlight(list[0].idx);
+      else clearSpotlight();
+    });
+
+    chips.forEach(c => c.addEventListener("click", () => setChip(c.dataset.filter)));
+
+    // init
+    render();
+    setSpotlight(0);
+  </script>
+</body>
+</html>
