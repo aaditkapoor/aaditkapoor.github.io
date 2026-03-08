@@ -221,73 +221,86 @@
       toggle.classList.toggle('active');
     });
 
-    // Load recent articles preview (last 3)
-    const MEDIUM_USERNAME = 'aaditkapoor';
-    const RSS_API = `https://api.rss2json.com/v1/api.json?rss_url=https://medium.com/feed/@${MEDIUM_USERNAME}&api_key=&count=3`;
+    // Load recent articles preview (last 3) — triple-fallback Medium fetch
+    var MEDIUM_USERNAME = 'aaditkapoor';
+    var MEDIUM_FEED = 'https://medium.com/feed/@' + MEDIUM_USERNAME;
 
-    function formatDate(dateStr) {
-      return new Date(dateStr).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+    function formatDate(str) {
+      var d = new Date(str);
+      return isNaN(d) ? str : d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
     }
-
     function stripHtml(html) {
-      const tmp = document.createElement('div');
-      tmp.innerHTML = html;
-      return tmp.textContent || tmp.innerText || '';
+      var t = document.createElement('div'); t.innerHTML = html;
+      return (t.textContent || t.innerText || '').replace(/\s+/g, ' ').trim();
+    }
+    function renderCard(item) {
+      var thumb = item.thumbnail || '';
+      var desc = stripHtml(item.description || '').slice(0, 120) + '\u2026';
+      var thumbHtml = thumb
+        ? '<div class="article-thumb" style="background-image:url(\'' + thumb + '\')"></div>'
+        : '<div class="article-thumb article-thumb-placeholder"></div>';
+      return '<a class="article-card" href="' + item.link + '" target="_blank" rel="noopener">'
+        + thumbHtml
+        + '<div class="article-body">'
+        + '<p class="article-date">' + formatDate(item.pubDate) + '</p>'
+        + '<h3 class="article-title">' + item.title + '</h3>'
+        + '<p class="article-excerpt">' + desc + '</p>'
+        + '<span class="article-read-more">Read on Medium &rarr;</span>'
+        + '</div></a>';
     }
 
-    function renderArticleCard(item) {
-      const thumb = item.thumbnail || '';
-      const desc = stripHtml(item.description).slice(0, 120) + '...';
-      return `
-        <a class="article-card" href="${item.link}" target="_blank" rel="noopener">
-          ${thumb ? `<div class="article-thumb" style="background-image:url('${thumb}')"></div>` : `<div class="article-thumb article-thumb-placeholder"></div>`}
-          <div class="article-body">
-            <p class="article-date">${formatDate(item.pubDate)}</p>
-            <h3 class="article-title">${item.title}</h3>
-            <p class="article-excerpt">${desc}</p>
-            <span class="article-read-more">Read on Medium &rarr;</span>
-          </div>
-        </a>`;
-    }
-
-    // Load from Medium RSS via rss2json
-    fetch(RSS_API)
-      .then(r => r.json())
-      .then(data => {
-        const container = document.getElementById('recent-articles');
-        if (data.status === 'ok' && data.items && data.items.length) {
-          container.innerHTML = data.items.map(renderArticleCard).join('');
-        } else {
-          loadLocalArticles(container);
-        }
-      })
-      .catch(() => {
-        loadLocalArticles(document.getElementById('recent-articles'));
+    function parseRssXml(text) {
+      var xml = new DOMParser().parseFromString(text, 'text/xml');
+      var items = Array.from(xml.querySelectorAll('item'));
+      if (!items.length) throw new Error('no items');
+      return items.slice(0, 3).map(function(item) {
+        function get(tag) { var el = item.querySelector(tag); return el ? el.textContent.trim() : ''; }
+        var enc = item.querySelector('encoded');
+        var m = enc && enc.textContent.match(/<img[^>]+src=["']([^"']+)["']/i);
+        return { title: get('title'), link: get('link') || get('guid'), pubDate: get('pubDate'), description: get('description'), thumbnail: m ? m[1] : '' };
       });
-
-    function loadLocalArticles(container) {
-      fetch('data/articles.json')
-        .then(r => r.json())
-        .then(articles => {
-          if (articles.length) {
-            container.innerHTML = articles.slice(0, 3).map(a => `
-              <a class="article-card" href="${a.link}" target="_blank" rel="noopener">
-                <div class="article-thumb article-thumb-placeholder"></div>
-                <div class="article-body">
-                  <p class="article-date">${a.date}</p>
-                  <h3 class="article-title">${a.title}</h3>
-                  <p class="article-excerpt">${a.excerpt}</p>
-                  <span class="article-read-more">Read more &rarr;</span>
-                </div>
-              </a>`).join('');
-          } else {
-            container.innerHTML = '<p class="no-articles">No articles yet. Check back soon!</p>';
-          }
-        })
-        .catch(() => {
-          container.innerHTML = '<p class="no-articles">Articles coming soon!</p>';
-        });
     }
+
+    var container = document.getElementById('recent-articles');
+
+    fetch('https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(MEDIUM_FEED) + '&count=3')
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (d.status === 'ok' && d.items && d.items.length) return d.items;
+        throw new Error(d.message || 'no items');
+      })
+      .catch(function() {
+        return fetch('https://api.allorigins.win/get?url=' + encodeURIComponent(MEDIUM_FEED))
+          .then(function(r) { return r.json(); })
+          .then(function(d) { return parseRssXml(d.contents); });
+      })
+      .catch(function() {
+        return fetch('https://corsproxy.io/?' + encodeURIComponent(MEDIUM_FEED))
+          .then(function(r) { return r.text(); })
+          .then(function(t) { return parseRssXml(t); });
+      })
+      .then(function(items) {
+        container.innerHTML = items.map(renderCard).join('');
+      })
+      .catch(function() {
+        // Fall back to local/admin articles
+        var lsRaw = localStorage.getItem('ak_articles');
+        var local = lsRaw ? JSON.parse(lsRaw) : [];
+        if (local.length) {
+          container.innerHTML = local.slice(0, 3).map(function(a) {
+            return '<a class="article-card" href="' + (a.link || '#') + '" target="_blank" rel="noopener">'
+              + '<div class="article-thumb article-thumb-placeholder"></div>'
+              + '<div class="article-body">'
+              + '<p class="article-date">' + a.date + '</p>'
+              + '<h3 class="article-title">' + a.title + '</h3>'
+              + '<p class="article-excerpt">' + a.excerpt + '</p>'
+              + '<span class="article-read-more">Read more &rarr;</span>'
+              + '</div></a>';
+          }).join('');
+        } else {
+          container.innerHTML = '<p class="no-articles">Articles coming soon! <a href="articles.html">View all</a></p>';
+        }
+      });
   </script>
 </body>
 </html>

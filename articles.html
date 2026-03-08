@@ -41,14 +41,14 @@
   <section class="section">
     <div class="container">
 
-      <!-- Source tabs -->
       <div class="filter-bar" id="source-tabs">
         <button class="filter-btn active" data-source="all">All</button>
         <button class="filter-btn" data-source="medium">From Medium</button>
         <button class="filter-btn" data-source="local">Custom Articles</button>
       </div>
 
-      <!-- Loading / Grid -->
+      <div id="articles-status" style="font-size:13px;color:var(--color-text-muted);margin-bottom:12px;display:none"></div>
+
       <div id="articles-container">
         <div class="articles-grid">
           <div class="article-skeleton"></div>
@@ -82,122 +82,238 @@
   <script>
     document.getElementById('year').textContent = new Date().getFullYear();
 
-    // Mobile nav
     document.querySelector('.nav-toggle').addEventListener('click', () => {
       document.querySelector('.nav-links').classList.toggle('open');
     });
 
+    // ── Config ──────────────────────────────────────────────────
     const MEDIUM_USERNAME = 'aaditkapoor';
-    const RSS_API = `https://api.rss2json.com/v1/api.json?rss_url=https://medium.com/feed/@${MEDIUM_USERNAME}&count=20`;
+    const MEDIUM_FEED = 'https://medium.com/feed/@' + MEDIUM_USERNAME;
 
     let allMediumArticles = [];
-    let allLocalArticles = [];
-    let currentSource = 'all';
+    let allLocalArticles  = [];
+    let currentSource     = 'all';
 
-    function formatDate(dateStr) {
-      return new Date(dateStr).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+    // ── Helpers ─────────────────────────────────────────────────
+    function formatDate(str) {
+      var d = new Date(str);
+      if (isNaN(d)) return str;
+      return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
     }
 
     function stripHtml(html) {
-      const tmp = document.createElement('div');
-      tmp.innerHTML = html;
-      return tmp.textContent || tmp.innerText || '';
+      var t = document.createElement('div');
+      t.innerHTML = html;
+      return (t.textContent || t.innerText || '').replace(/\s+/g, ' ').trim();
     }
 
+    function setStatus(msg) {
+      var el = document.getElementById('articles-status');
+      if (msg) { el.textContent = msg; el.style.display = 'block'; }
+      else { el.style.display = 'none'; }
+    }
+
+    // ── Render ───────────────────────────────────────────────────
     function renderMediumCard(item) {
-      const thumb = item.thumbnail || '';
-      const desc = stripHtml(item.description).slice(0, 130) + '...';
-      const categories = (item.categories || []).slice(0, 2);
+      var thumb = item.thumbnail || '';
+      var desc  = stripHtml(item.description || '').slice(0, 140) + '\u2026';
+      var cats  = (item.categories || []).slice(0, 2);
+      var catHtml = cats.length
+        ? '<p style="margin-top:8px">' + cats.map(function(c) {
+            return '<span class="tag" style="margin-right:4px">' + c + '</span>';
+          }).join('') + '</p>'
+        : '';
+      var thumbHtml = thumb
+        ? '<div class="article-thumb" style="background-image:url(\'' + thumb + '\')"></div>'
+        : '<div class="article-thumb article-thumb-placeholder"></div>';
       return {
-        html: `
-          <a class="article-card" href="${item.link}" target="_blank" rel="noopener" data-source="medium">
-            ${thumb ? `<div class="article-thumb" style="background-image:url('${thumb}')"></div>` : `<div class="article-thumb article-thumb-placeholder"></div>`}
-            <div class="article-body">
-              <p class="article-date">${formatDate(item.pubDate)} &nbsp;<span class="tag">Medium</span></p>
-              <h3 class="article-title">${item.title}</h3>
-              <p class="article-excerpt">${desc}</p>
-              ${categories.length ? `<p style="margin-top:8px">${categories.map(c => `<span class="tag" style="margin-right:4px">${c}</span>`).join('')}</p>` : ''}
-              <span class="article-read-more">Read on Medium &rarr;</span>
-            </div>
-          </a>`,
-        source: 'medium'
+        source: 'medium',
+        html: '<a class="article-card" href="' + item.link + '" target="_blank" rel="noopener">'
+          + thumbHtml
+          + '<div class="article-body">'
+          + '<p class="article-date">' + formatDate(item.pubDate) + ' &nbsp;<span class="tag">Medium</span></p>'
+          + '<h3 class="article-title">' + item.title + '</h3>'
+          + '<p class="article-excerpt">' + desc + '</p>'
+          + catHtml
+          + '<span class="article-read-more">Read on Medium &rarr;</span>'
+          + '</div></a>'
       };
     }
 
     function renderLocalCard(a) {
       return {
-        html: `
-          <a class="article-card" href="${a.link || '#'}" target="_blank" rel="noopener" data-source="local">
-            <div class="article-thumb article-thumb-placeholder"></div>
-            <div class="article-body">
-              <p class="article-date">${a.date} &nbsp;<span class="tag" style="background:#f0fdf4;color:#16a34a">Custom</span></p>
-              <h3 class="article-title">${a.title}</h3>
-              <p class="article-excerpt">${a.excerpt}</p>
-              <span class="article-read-more">Read more &rarr;</span>
-            </div>
-          </a>`,
-        source: 'local'
+        source: 'local',
+        html: '<a class="article-card" href="' + (a.link || '#') + '" target="_blank" rel="noopener">'
+          + '<div class="article-thumb article-thumb-placeholder"></div>'
+          + '<div class="article-body">'
+          + '<p class="article-date">' + a.date + ' &nbsp;<span class="tag" style="background:#f0fdf4;color:#16a34a">Custom</span></p>'
+          + '<h3 class="article-title">' + a.title + '</h3>'
+          + '<p class="article-excerpt">' + a.excerpt + '</p>'
+          + '<span class="article-read-more">Read more &rarr;</span>'
+          + '</div></a>'
       };
     }
 
     function renderGrid(cards) {
-      const container = document.getElementById('articles-container');
+      var container = document.getElementById('articles-container');
       if (!cards.length) {
-        container.innerHTML = '<p class="no-articles">No articles found.</p>';
+        container.innerHTML = '<p class="no-articles">No articles found. '
+          + 'Check that <a href="https://medium.com/@' + MEDIUM_USERNAME + '" target="_blank">medium.com/@' + MEDIUM_USERNAME + '</a> is public, '
+          + 'or add custom articles via the <a href="admin.html">admin panel</a>.</p>';
         return;
       }
-      container.innerHTML = `<div class="articles-grid">${cards.map(c => c.html).join('')}</div>`;
+      container.innerHTML = '<div class="articles-grid">'
+        + cards.map(function(c) { return c.html; }).join('')
+        + '</div>';
     }
 
     function filterAndRender() {
-      const all = [...allMediumArticles.map(renderMediumCard), ...allLocalArticles.map(renderLocalCard)];
+      var all = allMediumArticles.map(renderMediumCard)
+        .concat(allLocalArticles.map(renderLocalCard));
       if (currentSource === 'all') { renderGrid(all); return; }
-      renderGrid(all.filter(c => c.source === currentSource));
+      renderGrid(all.filter(function(c) { return c.source === currentSource; }));
     }
 
-    // Source tab buttons
-    document.getElementById('source-tabs').addEventListener('click', (e) => {
-      const btn = e.target.closest('[data-source]');
+    // ── Tab filter ───────────────────────────────────────────────
+    document.getElementById('source-tabs').addEventListener('click', function(e) {
+      var btn = e.target.closest('[data-source]');
       if (!btn) return;
-      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); });
       btn.classList.add('active');
       currentSource = btn.dataset.source;
       filterAndRender();
     });
 
-    // Load Medium articles
-    fetch(RSS_API)
-      .then(r => r.json())
-      .then(data => {
-        if (data.status === 'ok' && data.items) {
-          allMediumArticles = data.items;
-        }
-      })
-      .catch(() => {})
-      .finally(() => {
-        // Load local articles from JSON + localStorage
-        loadLocalArticles().then(() => filterAndRender());
-      });
+    // ── Strategy 1: rss2json.com ─────────────────────────────────
+    function fetchViaRss2Json() {
+      var url = 'https://api.rss2json.com/v1/api.json?rss_url='
+        + encodeURIComponent(MEDIUM_FEED) + '&count=30';
+      return fetch(url)
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (data.status === 'ok' && Array.isArray(data.items) && data.items.length > 0) {
+            return data.items;
+          }
+          throw new Error('rss2json: ' + (data.message || 'no items'));
+        });
+    }
+
+    // ── Strategy 2: allorigins CORS proxy + XML parse ────────────
+    function fetchViaProxy() {
+      var proxy = 'https://api.allorigins.win/get?url=' + encodeURIComponent(MEDIUM_FEED);
+      return fetch(proxy)
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          var parser = new DOMParser();
+          var xml = parser.parseFromString(data.contents, 'text/xml');
+          var items = Array.from(xml.querySelectorAll('item'));
+          if (!items.length) throw new Error('proxy: no <item> elements');
+
+          return items.map(function(item) {
+            function get(tag) {
+              var el = item.querySelector(tag);
+              return el ? el.textContent.trim() : '';
+            }
+            // Try to extract first image from content:encoded
+            var encoded = item.querySelector('encoded') || item.querySelector('[nodeName="content:encoded"]');
+            var thumb = '';
+            if (encoded) {
+              var m = encoded.textContent.match(/<img[^>]+src=["']([^"']+)["']/i);
+              if (m) thumb = m[1];
+            }
+            var cats = Array.from(item.querySelectorAll('category')).map(function(c) {
+              return c.textContent.trim();
+            });
+            // link may be in <link> or <guid>
+            var link = get('link') || get('guid');
+            return {
+              title:       get('title'),
+              link:        link,
+              pubDate:     get('pubDate'),
+              description: get('description'),
+              thumbnail:   thumb,
+              categories:  cats,
+            };
+          });
+        });
+    }
+
+    // ── Strategy 3: corsproxy.io ─────────────────────────────────
+    function fetchViaCorsProxyIo() {
+      var proxy = 'https://corsproxy.io/?' + encodeURIComponent(MEDIUM_FEED);
+      return fetch(proxy)
+        .then(function(r) { return r.text(); })
+        .then(function(text) {
+          var parser = new DOMParser();
+          var xml = parser.parseFromString(text, 'text/xml');
+          var items = Array.from(xml.querySelectorAll('item'));
+          if (!items.length) throw new Error('corsproxy.io: no items');
+          return items.map(function(item) {
+            function get(tag) {
+              var el = item.querySelector(tag);
+              return el ? el.textContent.trim() : '';
+            }
+            var thumb = '';
+            var encoded = item.querySelector('encoded');
+            if (encoded) {
+              var m = encoded.textContent.match(/<img[^>]+src=["']([^"']+)["']/i);
+              if (m) thumb = m[1];
+            }
+            return {
+              title:       get('title'),
+              link:        get('link') || get('guid'),
+              pubDate:     get('pubDate'),
+              description: get('description'),
+              thumbnail:   thumb,
+              categories:  Array.from(item.querySelectorAll('category')).map(function(c) { return c.textContent.trim(); }),
+            };
+          });
+        });
+    }
+
+    // ── Load pipeline ────────────────────────────────────────────
+    function loadMedium() {
+      setStatus('Loading Medium articles\u2026');
+      return fetchViaRss2Json()
+        .catch(function(e1) {
+          console.warn('rss2json failed:', e1.message, '— trying allorigins\u2026');
+          setStatus('Retrying via alternate source\u2026');
+          return fetchViaProxy();
+        })
+        .catch(function(e2) {
+          console.warn('allorigins failed:', e2.message, '— trying corsproxy.io\u2026');
+          return fetchViaCorsProxyIo();
+        })
+        .then(function(items) {
+          allMediumArticles = items;
+          setStatus('');
+        })
+        .catch(function(e3) {
+          console.warn('All Medium fetch strategies failed:', e3.message);
+          setStatus('Could not load Medium articles. Showing custom articles only.');
+        });
+    }
 
     function loadLocalArticles() {
-      // Merge data/articles.json with localStorage additions
       return fetch('data/articles.json')
-        .then(r => r.json())
-        .then(jsonArticles => {
-          const lsRaw = localStorage.getItem('ak_articles');
-          const lsArticles = lsRaw ? JSON.parse(lsRaw) : [];
-          // Merge: localStorage articles take precedence (admin adds go there)
-          const combined = [...jsonArticles];
-          lsArticles.forEach(la => {
-            if (!combined.find(a => a.id === la.id)) combined.push(la);
+        .then(function(r) { return r.json(); })
+        .then(function(jsonArticles) {
+          var lsRaw = localStorage.getItem('ak_articles');
+          var lsArticles = lsRaw ? JSON.parse(lsRaw) : [];
+          var combined = jsonArticles.slice();
+          lsArticles.forEach(function(la) {
+            if (!combined.find(function(a) { return a.id === la.id; })) combined.push(la);
           });
           allLocalArticles = combined;
         })
-        .catch(() => {
-          const lsRaw = localStorage.getItem('ak_articles');
+        .catch(function() {
+          var lsRaw = localStorage.getItem('ak_articles');
           allLocalArticles = lsRaw ? JSON.parse(lsRaw) : [];
         });
     }
+
+    // Run both in parallel, then render
+    Promise.all([loadMedium(), loadLocalArticles()]).then(filterAndRender);
   </script>
 </body>
 </html>
