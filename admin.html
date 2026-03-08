@@ -1,0 +1,374 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin — Aadit Kapoor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<!-- ============================================================
+     LOGIN SCREEN
+     ============================================================ -->
+<div id="login-screen" class="login-wrap">
+  <div class="login-card">
+    <div class="logo">AK / Admin</div>
+    <p class="subtitle">Sign in to manage your articles.</p>
+    <div id="login-error" class="alert alert-error" style="display:none"></div>
+    <form id="login-form">
+      <div class="form-group">
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username" autocomplete="username" placeholder="admin" required>
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" autocomplete="current-password" placeholder="••••••••" required>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:8px">Sign In</button>
+    </form>
+    <p style="font-size:12px;color:var(--color-text-muted);margin-top:20px;text-align:center">
+      <a href="/">← Back to site</a>
+    </p>
+  </div>
+</div>
+
+<!-- ============================================================
+     ADMIN DASHBOARD (hidden until authenticated)
+     ============================================================ -->
+<div id="admin-screen" style="display:none">
+
+  <!-- Nav -->
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="/" class="nav-logo">AK</a>
+      <ul class="nav-links">
+        <li><a href="/">← Back to site</a></li>
+        <li><a href="articles.html">View Articles</a></li>
+        <li><button id="logout-btn" class="btn btn-outline" style="font-size:14px;padding:6px 14px;cursor:pointer">Logout</button></li>
+      </ul>
+    </div>
+  </nav>
+
+  <div class="admin-layout">
+    <!-- Sidebar -->
+    <aside class="admin-sidebar">
+      <h2>Admin Panel</h2>
+      <nav class="admin-nav">
+        <a href="#" class="active" data-panel="articles">Articles</a>
+        <a href="#" data-panel="add">Add New Article</a>
+        <a href="#" data-panel="export">Export Data</a>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="admin-main">
+
+      <!-- Panel: Articles List -->
+      <div id="panel-articles">
+        <h1>Manage Articles</h1>
+        <div class="card">
+          <h2>Custom Articles <span id="article-count" class="tag"></span></h2>
+          <div id="article-list">
+            <p style="color:var(--color-text-muted);font-size:14px">No custom articles yet. Add your first one!</p>
+          </div>
+        </div>
+        <div id="success-msg" class="alert alert-success" style="display:none"></div>
+      </div>
+
+      <!-- Panel: Add New Article -->
+      <div id="panel-add" style="display:none">
+        <h1>Add New Article</h1>
+        <div class="card">
+          <h2>Article Details</h2>
+          <form id="article-form">
+            <div class="form-group">
+              <label for="art-title">Title *</label>
+              <input type="text" id="art-title" placeholder="Enter article title" required>
+            </div>
+            <div class="form-group">
+              <label for="art-excerpt">Excerpt / Summary *</label>
+              <textarea id="art-excerpt" placeholder="Short description of the article (1-2 sentences)" required></textarea>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="art-link">URL / Link *</label>
+                <input type="url" id="art-link" placeholder="https://..." required>
+              </div>
+              <div class="form-group">
+                <label for="art-date">Publication Date *</label>
+                <input type="date" id="art-date" required>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="art-tags">Tags (comma separated)</label>
+                <input type="text" id="art-tags" placeholder="AI, Machine Learning, Healthcare">
+              </div>
+              <div class="form-group">
+                <label for="art-source">Source Label</label>
+                <input type="text" id="art-source" placeholder="Medium, Personal Blog, etc." value="Custom">
+              </div>
+            </div>
+            <div style="display:flex;gap:12px;margin-top:8px">
+              <button type="submit" class="btn btn-primary">Publish Article</button>
+              <button type="reset" class="btn btn-outline">Clear</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Panel: Export -->
+      <div id="panel-export" style="display:none">
+        <h1>Export Data</h1>
+        <div class="card">
+          <h2>Export Articles JSON</h2>
+          <p style="font-size:14px;color:var(--color-text-muted);margin-bottom:16px">
+            Copy this JSON and save it to <code style="font-family:var(--font-mono);background:var(--color-bg-alt);padding:2px 6px;border-radius:4px">data/articles.json</code> in your repository to make articles permanent.
+          </p>
+          <button class="btn btn-outline" id="gen-export-btn">Generate JSON</button>
+          <div id="export-box" class="export-box" style="display:none"></div>
+          <div style="margin-top:12px;display:none" id="copy-wrap">
+            <button class="btn btn-primary" id="copy-btn">Copy to Clipboard</button>
+          </div>
+        </div>
+        <div class="card">
+          <h2>Import Articles JSON</h2>
+          <p style="font-size:14px;color:var(--color-text-muted);margin-bottom:16px">
+            Paste a previously exported JSON array to restore or merge articles.
+          </p>
+          <div class="form-group">
+            <label for="import-box">Paste JSON here</label>
+            <textarea id="import-box" style="font-family:var(--font-mono);font-size:12px" placeholder='[{"id":"...","title":"..."}]'></textarea>
+          </div>
+          <button class="btn btn-primary" id="import-btn">Import Articles</button>
+          <div id="import-msg" class="alert" style="display:none;margin-top:12px"></div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<script>
+  // ============================================================
+  // Auth — hardcoded credentials
+  // ============================================================
+  const ADMIN_USER = 'aadit';
+  const ADMIN_PASS = 'portfolio2025!';
+  const SESSION_KEY = 'ak_admin_session';
+
+  function isLoggedIn() {
+    return sessionStorage.getItem(SESSION_KEY) === 'true';
+  }
+
+  function showAdmin() {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('admin-screen').style.display = 'block';
+    renderArticleList();
+  }
+
+  function showLogin() {
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('admin-screen').style.display = 'none';
+  }
+
+  // Auto-restore session
+  if (isLoggedIn()) showAdmin();
+
+  // Login form
+  document.getElementById('login-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const user = document.getElementById('username').value.trim();
+    const pass = document.getElementById('password').value;
+    const err = document.getElementById('login-error');
+
+    if (user === ADMIN_USER && pass === ADMIN_PASS) {
+      sessionStorage.setItem(SESSION_KEY, 'true');
+      err.style.display = 'none';
+      showAdmin();
+    } else {
+      err.textContent = 'Invalid username or password.';
+      err.style.display = 'block';
+      document.getElementById('password').value = '';
+    }
+  });
+
+  // Logout
+  document.getElementById('logout-btn').addEventListener('click', () => {
+    sessionStorage.removeItem(SESSION_KEY);
+    showLogin();
+  });
+
+  // ============================================================
+  // Panel Navigation
+  // ============================================================
+  const panels = { articles: 'panel-articles', add: 'panel-add', export: 'panel-export' };
+
+  document.querySelector('.admin-nav').addEventListener('click', (e) => {
+    const link = e.target.closest('[data-panel]');
+    if (!link) return;
+    e.preventDefault();
+
+    document.querySelectorAll('.admin-nav a').forEach(a => a.classList.remove('active'));
+    link.classList.add('active');
+
+    Object.values(panels).forEach(id => document.getElementById(id).style.display = 'none');
+    document.getElementById(panels[link.dataset.panel]).style.display = 'block';
+  });
+
+  // ============================================================
+  // Articles CRUD — stored in localStorage
+  // ============================================================
+  const LS_KEY = 'ak_articles';
+
+  function getArticles() {
+    try { return JSON.parse(localStorage.getItem(LS_KEY)) || []; }
+    catch { return []; }
+  }
+
+  function saveArticles(articles) {
+    localStorage.setItem(LS_KEY, JSON.stringify(articles));
+  }
+
+  function generateId() {
+    return 'art_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+  }
+
+  function renderArticleList() {
+    const articles = getArticles();
+    const list = document.getElementById('article-list');
+    const count = document.getElementById('article-count');
+    count.textContent = articles.length;
+
+    if (!articles.length) {
+      list.innerHTML = '<p style="color:var(--color-text-muted);font-size:14px">No custom articles yet. <a href="#" data-panel="add" style="color:var(--color-accent)">Add your first one →</a></p>';
+      // Wire the link
+      list.querySelector('[data-panel]')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        document.querySelectorAll('.admin-nav a').forEach(a => a.classList.remove('active'));
+        document.querySelector('[data-panel="add"]').classList.add('active');
+        Object.values(panels).forEach(id => document.getElementById(id).style.display = 'none');
+        document.getElementById('panel-add').style.display = 'block';
+      });
+      return;
+    }
+
+    // Sort newest first
+    const sorted = [...articles].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    list.innerHTML = sorted.map(a => `
+      <div class="article-list-item" data-id="${a.id}">
+        <div class="article-list-meta">
+          <h4>${escHtml(a.title)}</h4>
+          <span>${a.date} · ${escHtml(a.source || 'Custom')}</span>
+        </div>
+        <div class="article-list-actions">
+          <a href="${a.link}" target="_blank" rel="noopener" class="btn btn-outline btn-sm">View</a>
+          <button class="btn btn-danger btn-sm" onclick="deleteArticle('${a.id}')">Delete</button>
+        </div>
+      </div>`).join('');
+  }
+
+  function deleteArticle(id) {
+    if (!confirm('Delete this article? This cannot be undone.')) return;
+    const articles = getArticles().filter(a => a.id !== id);
+    saveArticles(articles);
+    renderArticleList();
+    showSuccessMsg('Article deleted.');
+  }
+
+  function showSuccessMsg(msg) {
+    const el = document.getElementById('success-msg');
+    el.textContent = msg;
+    el.style.display = 'block';
+    setTimeout(() => { el.style.display = 'none'; }, 3000);
+  }
+
+  function escHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // Add article form
+  document.getElementById('article-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const title   = document.getElementById('art-title').value.trim();
+    const excerpt = document.getElementById('art-excerpt').value.trim();
+    const link    = document.getElementById('art-link').value.trim();
+    const date    = document.getElementById('art-date').value;
+    const tags    = document.getElementById('art-tags').value.split(',').map(t => t.trim()).filter(Boolean);
+    const source  = document.getElementById('art-source').value.trim() || 'Custom';
+
+    if (!title || !excerpt || !link || !date) return;
+
+    const article = { id: generateId(), title, excerpt, link, date, tags, source };
+    const articles = getArticles();
+    articles.unshift(article);
+    saveArticles(articles);
+
+    e.target.reset();
+    renderArticleList();
+
+    // Switch to articles panel
+    document.querySelectorAll('.admin-nav a').forEach(a => a.classList.remove('active'));
+    document.querySelector('[data-panel="articles"]').classList.add('active');
+    Object.values(panels).forEach(id => document.getElementById(id).style.display = 'none');
+    document.getElementById('panel-articles').style.display = 'block';
+    showSuccessMsg('Article published successfully!');
+  });
+
+  // Export
+  document.getElementById('gen-export-btn').addEventListener('click', () => {
+    const articles = getArticles();
+    const json = JSON.stringify(articles, null, 2);
+    const box = document.getElementById('export-box');
+    const wrap = document.getElementById('copy-wrap');
+    box.textContent = json;
+    box.style.display = 'block';
+    wrap.style.display = 'block';
+  });
+
+  document.getElementById('copy-btn').addEventListener('click', () => {
+    const text = document.getElementById('export-box').textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      document.getElementById('copy-btn').textContent = 'Copied!';
+      setTimeout(() => { document.getElementById('copy-btn').textContent = 'Copy to Clipboard'; }, 2000);
+    });
+  });
+
+  // Import
+  document.getElementById('import-btn').addEventListener('click', () => {
+    const raw = document.getElementById('import-box').value.trim();
+    const msg = document.getElementById('import-msg');
+    try {
+      const incoming = JSON.parse(raw);
+      if (!Array.isArray(incoming)) throw new Error('Must be a JSON array.');
+      const existing = getArticles();
+      const merged = [...existing];
+      let added = 0;
+      incoming.forEach(a => {
+        if (!a.id) a.id = generateId();
+        if (!merged.find(x => x.id === a.id)) { merged.push(a); added++; }
+      });
+      saveArticles(merged);
+      renderArticleList();
+      msg.className = 'alert alert-success';
+      msg.textContent = `Imported ${added} new article(s). ${incoming.length - added} duplicate(s) skipped.`;
+      msg.style.display = 'block';
+      document.getElementById('import-box').value = '';
+    } catch (err) {
+      msg.className = 'alert alert-error';
+      msg.textContent = 'Invalid JSON: ' + err.message;
+      msg.style.display = 'block';
+    }
+  });
+
+  // Set today's date as default
+  document.getElementById('art-date').valueAsDate = new Date();
+</script>
+
+</body>
+</html>

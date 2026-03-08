@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Articles — Aadit Kapoor</title>
+  <meta name="description" content="Articles and writing by Aadit Kapoor on AI, ML, Healthcare, and more.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="/" class="nav-logo">AK</a>
+      <ul class="nav-links">
+        <li><a href="/#about">About</a></li>
+        <li><a href="/#experience">Experience</a></li>
+        <li><a href="articles.html" style="color:var(--color-accent)">Articles</a></li>
+        <li><a href="projects.html">Projects</a></li>
+        <li><a href="mailto:aaditkapoor2000@gmail.com" class="nav-cta">Contact</a></li>
+      </ul>
+      <button class="nav-toggle" aria-label="Toggle navigation">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="container">
+      <h1>Articles</h1>
+      <p>Writing on AI, machine learning, healthcare, and biomedical research.</p>
+    </div>
+  </div>
+
+  <!-- Articles Section -->
+  <section class="section">
+    <div class="container">
+
+      <!-- Source tabs -->
+      <div class="filter-bar" id="source-tabs">
+        <button class="filter-btn active" data-source="all">All</button>
+        <button class="filter-btn" data-source="medium">From Medium</button>
+        <button class="filter-btn" data-source="local">Custom Articles</button>
+      </div>
+
+      <!-- Loading / Grid -->
+      <div id="articles-container">
+        <div class="articles-grid">
+          <div class="article-skeleton"></div>
+          <div class="article-skeleton"></div>
+          <div class="article-skeleton"></div>
+          <div class="article-skeleton"></div>
+          <div class="article-skeleton"></div>
+          <div class="article-skeleton"></div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-inner">
+        <p class="footer-name">Aadit Kapoor</p>
+        <div class="footer-links">
+          <a href="https://github.com/aaditkapoor/" target="_blank" rel="noopener">GitHub</a>
+          <a href="https://www.linkedin.com/in/aadit-kapoor-263504143/" target="_blank" rel="noopener">LinkedIn</a>
+          <a href="articles.html">Articles</a>
+          <a href="mailto:aaditkapoor2000@gmail.com">Email</a>
+        </div>
+        <p class="footer-copy">&copy; <span id="year"></span> Aadit Kapoor</p>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    // Mobile nav
+    document.querySelector('.nav-toggle').addEventListener('click', () => {
+      document.querySelector('.nav-links').classList.toggle('open');
+    });
+
+    const MEDIUM_USERNAME = 'aaditkapoor';
+    const RSS_API = `https://api.rss2json.com/v1/api.json?rss_url=https://medium.com/feed/@${MEDIUM_USERNAME}&count=20`;
+
+    let allMediumArticles = [];
+    let allLocalArticles = [];
+    let currentSource = 'all';
+
+    function formatDate(dateStr) {
+      return new Date(dateStr).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+    }
+
+    function stripHtml(html) {
+      const tmp = document.createElement('div');
+      tmp.innerHTML = html;
+      return tmp.textContent || tmp.innerText || '';
+    }
+
+    function renderMediumCard(item) {
+      const thumb = item.thumbnail || '';
+      const desc = stripHtml(item.description).slice(0, 130) + '...';
+      const categories = (item.categories || []).slice(0, 2);
+      return {
+        html: `
+          <a class="article-card" href="${item.link}" target="_blank" rel="noopener" data-source="medium">
+            ${thumb ? `<div class="article-thumb" style="background-image:url('${thumb}')"></div>` : `<div class="article-thumb article-thumb-placeholder"></div>`}
+            <div class="article-body">
+              <p class="article-date">${formatDate(item.pubDate)} &nbsp;<span class="tag">Medium</span></p>
+              <h3 class="article-title">${item.title}</h3>
+              <p class="article-excerpt">${desc}</p>
+              ${categories.length ? `<p style="margin-top:8px">${categories.map(c => `<span class="tag" style="margin-right:4px">${c}</span>`).join('')}</p>` : ''}
+              <span class="article-read-more">Read on Medium &rarr;</span>
+            </div>
+          </a>`,
+        source: 'medium'
+      };
+    }
+
+    function renderLocalCard(a) {
+      return {
+        html: `
+          <a class="article-card" href="${a.link || '#'}" target="_blank" rel="noopener" data-source="local">
+            <div class="article-thumb article-thumb-placeholder"></div>
+            <div class="article-body">
+              <p class="article-date">${a.date} &nbsp;<span class="tag" style="background:#f0fdf4;color:#16a34a">Custom</span></p>
+              <h3 class="article-title">${a.title}</h3>
+              <p class="article-excerpt">${a.excerpt}</p>
+              <span class="article-read-more">Read more &rarr;</span>
+            </div>
+          </a>`,
+        source: 'local'
+      };
+    }
+
+    function renderGrid(cards) {
+      const container = document.getElementById('articles-container');
+      if (!cards.length) {
+        container.innerHTML = '<p class="no-articles">No articles found.</p>';
+        return;
+      }
+      container.innerHTML = `<div class="articles-grid">${cards.map(c => c.html).join('')}</div>`;
+    }
+
+    function filterAndRender() {
+      const all = [...allMediumArticles.map(renderMediumCard), ...allLocalArticles.map(renderLocalCard)];
+      if (currentSource === 'all') { renderGrid(all); return; }
+      renderGrid(all.filter(c => c.source === currentSource));
+    }
+
+    // Source tab buttons
+    document.getElementById('source-tabs').addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-source]');
+      if (!btn) return;
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentSource = btn.dataset.source;
+      filterAndRender();
+    });
+
+    // Load Medium articles
+    fetch(RSS_API)
+      .then(r => r.json())
+      .then(data => {
+        if (data.status === 'ok' && data.items) {
+          allMediumArticles = data.items;
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        // Load local articles from JSON + localStorage
+        loadLocalArticles().then(() => filterAndRender());
+      });
+
+    function loadLocalArticles() {
+      // Merge data/articles.json with localStorage additions
+      return fetch('data/articles.json')
+        .then(r => r.json())
+        .then(jsonArticles => {
+          const lsRaw = localStorage.getItem('ak_articles');
+          const lsArticles = lsRaw ? JSON.parse(lsRaw) : [];
+          // Merge: localStorage articles take precedence (admin adds go there)
+          const combined = [...jsonArticles];
+          lsArticles.forEach(la => {
+            if (!combined.find(a => a.id === la.id)) combined.push(la);
+          });
+          allLocalArticles = combined;
+        })
+        .catch(() => {
+          const lsRaw = localStorage.getItem('ak_articles');
+          allLocalArticles = lsRaw ? JSON.parse(lsRaw) : [];
+        });
+    }
+  </script>
+</body>
+</html>
